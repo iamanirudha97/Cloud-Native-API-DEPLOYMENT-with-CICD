@@ -24,6 +24,7 @@ const registerUser = async (req, res) => {
         });
 
         res.status(201).json({
+            message: `new user created`,
             id: user.id,
             first_name: user.firstName,
             last_name: user.lastName,
