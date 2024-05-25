@@ -1,0 +1,8 @@
+#!/usr/bin/expect
+set PG_PASSWORD [lindex $argv 0]
+spawn sudo -u postgres psql
+expect "postgres=#"
+send "ALTER USER postgres WITH PASSWORD '$PG_PASSWORD';\r"
+expect "postgres=#"
+send "\\q\r"
+expect "#"
