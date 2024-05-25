@@ -1,0 +1,59 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Node Integration Tests
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup pgsql db instance
+        run: |
+          sudo apt-get update -y
+          sudo apt install postgresql postgresql-contrib -y
+          sudo systemctl start postgresql.service
+          pwd
+          ls -al
+          sudo apt-get install -y expect
+          pwd
+          cd packer/
+          pwd
+          sudo expect pg_user_setup.exp ${{ secrets.PG_PASSWORD }}
+          cd -
+          pwd
+          sudo systemctl restart postgresql
+          sudo mv -f /etc/postgresql/14/main/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf.bak
+          sudo mv -f ./packer/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
+          sudo cat /etc/postgresql/14/main/pg_hba.conf
+          sudo systemctl restart postgresql
+
+
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+        
+      - name: install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      
+      - name: save .env files
+        env:
+          ENV_VAR: ${{ secrets.ENV_VAR }}
+        run: echo "$ENV_VAR" > .env
+
+      - name: run bash script
+        run: |
+          chmod 755 run_test.sh
+          ./run_test.sh
+          
